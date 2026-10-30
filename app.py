@@ -17,7 +17,13 @@ from flask import (
 
 
 TASK_STATUSES = ("To Do", "In Progress", "Done")
-EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+# Common email syntax: an unquoted dot-separated local part and DNS labels.
+EMAIL_PATTERN = re.compile(
+    r"[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+"
+    r"(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@"
+    r"(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+"
+    r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
+)
 
 
 def create_app(test_config=None):
@@ -452,8 +458,10 @@ def validate_client(client):
         return "Phone number must be 40 characters or fewer."
     if len(client["email"]) > 254:
         return "Email address must be 254 characters or fewer."
-    if client["email"] and not EMAIL_PATTERN.fullmatch(client["email"]):
-        return "Enter a valid email address."
+    if client["email"]:
+        local_part = client["email"].split("@", 1)[0]
+        if len(local_part) > 64 or not EMAIL_PATTERN.fullmatch(client["email"]):
+            return "Enter a valid email address."
     if len(client["company"]) > 120:
         return "Company must be 120 characters or fewer."
     if len(client["notes"]) > 2000:

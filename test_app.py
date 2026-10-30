@@ -191,6 +191,71 @@ class BusinessAssistantTests(unittest.TestCase):
             ).fetchone()
             self.assertIsNone(task["client_id"])
 
+    def test_client_email_validation_on_create_and_edit(self):
+        valid_emails = (
+            "owner@example.test",
+            "first.last+orders@sub.example-domain.test",
+            "O'Connor@Example.TEST",
+            "  trimmed@example.test  ",
+            "",
+            "   ",
+        )
+        invalid_emails = (
+            "a@b..com", "a@b.c,d", "a<b>@example.com",
+            "missing-at.example.com", "a@@example.com", "a@localhost",
+            ".a@example.com", "a.@example.com", "a..b@example.com",
+            "a b@example.com", "a@-example.com", "a@example-.com",
+            "a@exam_ple.com", "a@" + "b" * 64 + ".com",
+            "a" * 65 + "@example.com",
+        )
+        existing = self.create_client(name="Existing client", email="before@example.test")
+        for editing in (False, True):
+            endpoint = (
+                f"/clients/{existing['id']}/edit" if editing else "/clients/new"
+            )
+            for email in valid_emails + invalid_emails:
+                with self.subTest(editing=editing, email=email):
+                    with self.app.app_context():
+                        before = [tuple(row) for row in get_db().execute(
+                            "SELECT * FROM clients ORDER BY id"
+                        )]
+                    response = self.client.post(endpoint, data={
+                        "name": "Email validation client", "phone": "555-0100",
+                        "email": email,
+                    })
+                    if email in invalid_emails:
+                        self.assertEqual(response.status_code, 200)
+                        self.assertIn(b"Enter a valid email address", response.data)
+                        with self.app.app_context():
+                            after = [tuple(row) for row in get_db().execute(
+                                "SELECT * FROM clients ORDER BY id"
+                            )]
+                        self.assertEqual(after, before)
+                    else:
+                        self.assertEqual(response.status_code, 302)
+                        with self.app.app_context():
+                            if editing:
+                                row = get_db().execute(
+                                    "SELECT email FROM clients WHERE id = ?",
+                                    (existing['id'],),
+                                ).fetchone()
+                            else:
+                                row = get_db().execute(
+                                    "SELECT email FROM clients ORDER BY id DESC LIMIT 1"
+                                ).fetchone()
+                        self.assertEqual(row['email'], email.strip() or None)
+
+        for editing in (False, True):
+            endpoint = f"/clients/{existing['id']}/edit" if editing else "/clients/new"
+            for email, accepted in (("contact@example.test", True), ("", False)):
+                with self.subTest(editing=editing, email_only=email):
+                    response = self.client.post(endpoint, data={
+                        "name": "Email-only client", "phone": "", "email": email,
+                    })
+                    self.assertEqual(response.status_code, 302 if accepted else 200)
+                    if not accepted:
+                        self.assertIn(b"Provide at least a phone number or an email", response.data)
+
     def test_task_validation_filters_and_crud(self):
         invalid = self.client.post(
             "/tasks/new",
