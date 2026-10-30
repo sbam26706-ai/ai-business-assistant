@@ -1,9 +1,68 @@
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from datetime import date, timedelta
 from pathlib import Path
 
 from app import create_app, get_db
+
+
+class DatabaseIsolationTests(unittest.TestCase):
+    def test_imports_and_suite_never_open_normal_database(self):
+        # A fresh interpreter exercises imports as well as application setup.
+        script = r'''
+import os
+import pathlib
+import sqlite3
+import unittest
+from unittest.mock import patch
+
+normal_paths = {
+    pathlib.Path(os.environ["DATABASE_PATH"]).resolve(),
+    (pathlib.Path.cwd() / "data" / "app.db").resolve(),
+}
+original_connect = sqlite3.connect
+
+def isolated_connect(database, *args, **kwargs):
+    if pathlib.Path(database).resolve() in normal_paths:
+        raise AssertionError("Tests attempted to open a normal database")
+    return original_connect(database, *args, **kwargs)
+
+with patch("sqlite3.connect", side_effect=isolated_connect):
+    import app
+    import test_app
+    suite = unittest.defaultTestLoader.loadTestsFromTestCase(
+        test_app.BusinessAssistantTests
+    )
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    if not result.wasSuccessful():
+        raise SystemExit(1)
+'''
+        with tempfile.TemporaryDirectory() as directory:
+            normal_database = Path(directory) / "normal.db"
+            for existing in (False, True):
+                with self.subTest(existing_database=existing):
+                    if existing:
+                        normal_database.write_bytes(b"Existing database must stay untouched")
+                    before = normal_database.read_bytes() if existing else None
+                    environment = os.environ.copy()
+                    environment["DATABASE_PATH"] = str(normal_database)
+                    environment["PYTHONDONTWRITEBYTECODE"] = "1"
+                    result = subprocess.run(
+                        [sys.executable, "-B", "-c", script],
+                        cwd=Path(__file__).resolve().parent,
+                        env=environment,
+                        capture_output=True,
+                        text=True,
+                        timeout=60,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    if existing:
+                        self.assertEqual(normal_database.read_bytes(), before)
+                    else:
+                        self.assertFalse(normal_database.exists())
 
 
 class BusinessAssistantTests(unittest.TestCase):
