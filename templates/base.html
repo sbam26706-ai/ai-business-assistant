@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}AI Business Assistant{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="{{ url_for('dashboard') }}">
+        <span class="brand-mark" aria-hidden="true">A</span>
+        <span><strong>Business Assistant</strong><small>Week 3 foundation</small></span>
+      </a>
+      <nav class="navigation" aria-label="Main navigation">
+        <a href="{{ url_for('dashboard') }}"
+           class="{% if request.endpoint == 'dashboard' %}active{% endif %}">Dashboard</a>
+        <a href="{{ url_for('clients') }}"
+           class="{% if request.endpoint in ('clients', 'new_client', 'edit_client') %}active{% endif %}">Clients</a>
+        <a href="{{ url_for('tasks') }}"
+           class="{% if request.endpoint in ('tasks', 'new_task', 'edit_task') %}active{% endif %}">Tasks</a>
+      </nav>
+      <div class="sidebar-note">A local workspace for your clients and day-to-day tasks.</div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <span>AI Business Assistant <span class="topbar-divider">/</span> Mini CRM</span>
+        <span class="local-badge"><span aria-hidden="true"></span> Local workspace</span>
+      </header>
+      <section class="page-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-list" aria-live="polite">
+              {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </section>
+      <footer class="footer">Mini CRM is one module of the AI Business Assistant.</footer>
+    </main>
+  </div>
+</body>
+</html>
