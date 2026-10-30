@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Clients | AI Business Assistant{% endblock %}
+{% block content %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">RELATIONSHIPS</p>
+      <h1>Clients</h1>
+      <p class="muted">Keep contact details and notes together.</p>
+    </div>
+    <a class="button button-primary" href="{{ url_for('new_client') }}">＋ Add client</a>
+  </div>
+
+  <form class="toolbar search-toolbar" action="{{ url_for('clients') }}" method="get">
+    <label class="sr-only" for="client-search">Search clients</label>
+    <input id="client-search" type="search" name="q" value="{{ search }}"
+           placeholder="Search name, email, or company">
+    <button class="button button-secondary" type="submit">Search</button>
+    {% if search %}<a class="button button-quiet" href="{{ url_for('clients') }}">Clear</a>{% endif %}
+    <span class="toolbar-count">{{ clients|length }} result{% if clients|length != 1 %}s{% endif %}</span>
+  </form>
+
+  {% if clients %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Client</th><th>Contact</th><th>Company</th><th>Notes</th><th class="actions-heading">Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for client in clients %}
+            <tr>
+              <td><strong>{{ client.name }}</strong></td>
+              <td class="contact-cell">
+                {% if client.email %}<a href="mailto:{{ client.email }}">{{ client.email }}</a>{% endif %}
+                {% if client.phone %}<span>{{ client.phone }}</span>{% endif %}
+              </td>
+              <td>{{ client.company or "—" }}</td>
+              <td class="notes-cell">{{ client.notes or "—" }}</td>
+              <td class="row-actions">
+                <a class="small-action" href="{{ url_for('edit_client', client_id=client.id) }}">Edit</a>
+                <form method="post" action="{{ url_for('delete_client', client_id=client.id) }}"
+                      data-confirm="Delete this client? Their tasks will be kept without a linked client.">
+                  <button class="small-action danger-link" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon" aria-hidden="true">⌕</div>
+      <h2>{% if search %}No matching clients{% else %}No clients yet{% endif %}</h2>
+      <p>{% if search %}Try a different name, email, or company.{% else %}Add a client to start building your Mini CRM.{% endif %}</p>
+      {% if not search %}<a class="button button-primary" href="{{ url_for('new_client') }}">Add your first client</a>{% endif %}
+    </div>
+  {% endif %}
+{% endblock %}

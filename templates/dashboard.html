@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | AI Business Assistant{% endblock %}
+{% block content %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">OVERVIEW</p>
+      <h1>Dashboard</h1>
+      <p class="muted">A clear view of your clients and work in progress.</p>
+    </div>
+    <div class="heading-actions">
+      <a class="button button-secondary" href="{{ url_for('new_client') }}">Add client</a>
+      <a class="button button-primary" href="{{ url_for('new_task') }}">Create task</a>
+    </div>
+  </div>
+
+  <div class="metric-grid">
+    <article class="metric-card">
+      <span class="metric-label">Total clients</span>
+      <strong class="metric-value">{{ metrics.total_clients }}</strong>
+      <a href="{{ url_for('clients') }}">View clients <span aria-hidden="true">→</span></a>
+    </article>
+    <article class="metric-card metric-accent-blue">
+      <span class="metric-label">In progress</span>
+      <strong class="metric-value">{{ metrics.in_progress_tasks }}</strong>
+      <a href="{{ url_for('tasks', status='In Progress') }}">View tasks <span aria-hidden="true">→</span></a>
+    </article>
+    <article class="metric-card metric-accent-orange">
+      <span class="metric-label">Overdue tasks</span>
+      <strong class="metric-value">{{ metrics.overdue_tasks }}</strong>
+      <a href="{{ url_for('tasks') }}">Review tasks <span aria-hidden="true">→</span></a>
+    </article>
+    <article class="metric-card metric-accent-green">
+      <span class="metric-label">Completed</span>
+      <strong class="metric-value">{{ metrics.completed_tasks }}</strong>
+      <a href="{{ url_for('tasks', status='Done') }}">View completed <span aria-hidden="true">→</span></a>
+    </article>
+  </div>
+
+  {% if metrics.total_clients == 0 and metrics.total_tasks == 0 %}
+    <section class="welcome-card">
+      <div class="welcome-icon" aria-hidden="true">＋</div>
+      <div>
+        <h2>Your workspace is ready</h2>
+        <p class="muted">There are no records yet. Add a client or create a task to get started.</p>
+      </div>
+      <div class="heading-actions">
+        <a class="button button-secondary" href="{{ url_for('new_client') }}">Add client</a>
+        <a class="button button-primary" href="{{ url_for('new_task') }}">Create task</a>
+      </div>
+    </section>
+  {% else %}
+    <section class="welcome-card">
+      <div class="welcome-icon" aria-hidden="true">✓</div>
+      <div>
+        <h2>Your workspace is ready</h2>
+        <p class="muted">Manage client details and keep your next steps on track. Demo records are fictional and can be edited or deleted.</p>
+      </div>
+      <a class="text-link" href="{{ url_for('tasks') }}">Open task list <span aria-hidden="true">→</span></a>
+    </section>
+  {% endif %}
+{% endblock %}

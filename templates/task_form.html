@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ "Edit task" if is_edit else "Create task" }} | AI Business Assistant{% endblock %}
+{% block content %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">TASKS</p>
+      <h1>{{ "Edit task" if is_edit else "Create a task" }}</h1>
+      <p class="muted">Set a clear next step and when it is due.</p>
+    </div>
+  </div>
+
+  <form class="form-card" method="post">
+    <div class="form-grid">
+      <div class="form-field form-field-wide">
+        <label for="title">Title <span class="required">*</span></label>
+        <input id="title" name="title" type="text" maxlength="160" required
+               value="{{ task.title }}" autofocus>
+      </div>
+      <div class="form-field">
+        <label for="due_date">Due date <span class="required">*</span></label>
+        <input id="due_date" name="due_date" type="date" required value="{{ task.due_date }}">
+      </div>
+      <div class="form-field">
+        <label for="status">Status</label>
+        <select id="status" name="status" required>
+          {% for status in statuses %}
+            <option value="{{ status }}" {% if task.status == status %}selected{% endif %}>{{ status }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="client_id">Linked client</label>
+        <select id="client_id" name="client_id">
+          <option value="">No client</option>
+          {% for client in clients %}
+            <option value="{{ client.id }}" {% if task.client_id|string == client.id|string %}selected{% endif %}>
+              {{ client.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-field form-field-wide">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="5" maxlength="2000">{{ task.description or '' }}</textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <a class="button button-secondary" href="{{ url_for('tasks') }}">Cancel</a>
+      <button class="button button-primary" type="submit">{{ "Save changes" if is_edit else "Save task" }}</button>
+    </div>
+  </form>
+{% endblock %}
